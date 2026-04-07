@@ -1,0 +1,4 @@
+My name is John Smith and my email is john.smith@example.com.
+My SSN is 123-45-6789 and I live at 123 Main Street, Seattle WA.
+You can call me at 206-555-1234.
+My credit card number is 4532-1234-5678-9010.

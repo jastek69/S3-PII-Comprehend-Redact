@@ -1,0 +1,97 @@
+################################################################################
+# EXAMPLE TERRAFORM VARIABLES
+# Copy this file to terraform.tfvars and customize the values for your deployment
+#
+# cp terraform.tfvars.example terraform.tfvars
+################################################################################
+
+# Project Configuration
+project_name = "pii-redaction"
+aws_region   = "us-west-1"  # Change to your preferred region
+
+# S3 Configuration
+force_destroy = true  # Set to false in production to prevent accidental deletion
+
+# Access Point Names (must be unique within your AWS account and region)
+standard_access_point_name       = "pii-standard-access-point"
+object_lambda_access_point_name  = "pii-object-lambda-access-point"
+
+# Lambda Configuration
+pii_lambda_function_name = "pii-redaction-lambda"
+pii_lambda_role_name     = "pii-redaction-lambda-role"
+lambda_timeout           = 60      # Seconds (increase for large files)
+lambda_memory_size       = 512     # MB (increase for better performance)
+log_retention_days       = 14      # CloudWatch log retention
+
+# PII Redaction Configuration
+# See: https://docs.aws.amazon.com/comprehend/latest/dg/how-pii.html
+
+# Mask character to replace PII (single character)
+mask_character = "*"
+
+# Mask mode: "MASK" or "REPLACE_WITH_PII_ENTITY_TYPE"
+# MASK: Replace with mask_character (e.g., ***********)
+# REPLACE_WITH_PII_ENTITY_TYPE: Replace with entity type (e.g., [EMAIL])
+mask_mode = "MASK"
+
+# PII entity types to redact
+# Options:
+# - "ALL" - Redact all PII types (recommended for maximum protection)
+# - Comma-separated list of specific types (e.g., "EMAIL,PHONE,SSN")
+#
+# Supported entity types:
+# - ADDRESS
+# - AGE
+# - AWS_ACCESS_KEY
+# - AWS_SECRET_KEY
+# - BANK_ACCOUNT_NUMBER
+# - BANK_ROUTING
+# - CA_HEALTH_NUMBER
+# - CA_SOCIAL_INSURANCE_NUMBER
+# - CREDIT_DEBIT_NUMBER
+# - CREDIT_DEBIT_CVV
+# - CREDIT_DEBIT_EXPIRY
+# - DATE_TIME
+# - DRIVER_ID
+# - EMAIL
+# - INTERNATIONAL_BANK_ACCOUNT_NUMBER
+# - IP_ADDRESS
+# - LICENSE_PLATE
+# - MAC_ADDRESS
+# - NAME
+# - PASSWORD
+# - PHONE
+# - PIN
+# - PASSPORT_NUMBER
+# - SSN
+# - SWIFT_CODE
+# - UK_NATIONAL_HEALTH_SERVICE_NUMBER
+# - UK_NATIONAL_INSURANCE_NUMBER
+# - UK_UNIQUE_TAXPAYER_REFERENCE_NUMBER
+# - URL
+# - USERNAME
+# - US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER
+# - VEHICLE_IDENTIFICATION_NUMBER
+# - And more...
+
+pii_entity_types = "ALL"
+
+# Example configurations:
+
+# Configuration 1: Redact everything (most secure)
+# pii_entity_types = "ALL"
+# mask_mode = "MASK"
+# mask_character = "*"
+
+# Configuration 2: Show entity types (useful for debugging)
+# pii_entity_types = "ALL"
+# mask_mode = "REPLACE_WITH_PII_ENTITY_TYPE"
+
+# Configuration 3: Redact specific types only
+# pii_entity_types = "EMAIL,PHONE,SSN,CREDIT_DEBIT_NUMBER"
+# mask_mode = "MASK"
+# mask_character = "#"
+
+# Configuration 4: Financial data only
+# pii_entity_types = "CREDIT_DEBIT_NUMBER,CREDIT_DEBIT_CVV,CREDIT_DEBIT_EXPIRY,BANK_ACCOUNT_NUMBER,BANK_ROUTING"
+# mask_mode = "REPLACE_WITH_PII_ENTITY_TYPE"

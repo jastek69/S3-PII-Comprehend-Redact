@@ -47,21 +47,6 @@ output "pii_lambda_role_arn" {
 }
 
 # EC2 Instance
-output "pii_ec2_public_ip" {
-  description = "Public IP of EC2 instance for Lambda layer building"
-  value       = aws_instance.pii.public_ip
-}
-
-output "pii_ec2_ssh_command" {
-  description = "SSH command to connect to EC2"
-  value       = "ssh -i piiKP.pem ec2-user@${aws_instance.pii.public_ip}"
-}
-
-output "pii_ec2_scp_layer_command" {
-  description = "SCP command to download Lambda layer"
-  value       = "scp -i piiKP.pem -o StrictHostKeyChecking=no ec2-user@${aws_instance.pii.public_ip}:/home/ec2-user/pdf-layer.zip ./lambda/"
-}
-
 # Configuration
 output "pii_redaction_config" {
   description = "Current PII redaction configuration"
@@ -84,8 +69,23 @@ output "usage_instructions" {
     NOTE: S3 Object Lambda is not available in your AWS account.
     Using API Gateway + Lambda instead for PII redaction.
     
-    Custom Domain: https://${aws_api_gateway_domain_name.pii_api.domain_name}
-    Default URL: ${aws_api_gateway_stage.prod.invoke_url}
+    🌐 WEB INTERFACE (Simple UI):
+       ${try(aws_s3_bucket_website_configuration.pii_website.website_endpoint, "Not deployed - website.tf not applied")}
+    
+    🔗 API ENDPOINTS:
+       Custom Domain: https://${aws_api_gateway_domain_name.pii_api.domain_name}
+       Default URL: ${aws_api_gateway_stage.prod.invoke_url}
+    
+    📦 SETUP WEB INTERFACE:
+       1. Update web/app.js with your bucket name:
+          BUCKET_NAME: '${aws_s3_bucket.pii_data_bucket.id}'
+       
+       2. Upload updated config:
+          aws s3 cp web/app.js s3://${try(aws_s3_bucket.pii_website.id, "website-bucket")}/app.js
+       
+       3. Open web interface and test!
+    
+    💻 COMMAND LINE USAGE:
     
     1. Upload a file with PII data to the S3 bucket:
        aws s3 cp sample.txt s3://${aws_s3_bucket.pii_data_bucket.id}/
@@ -118,10 +118,11 @@ output "usage_instructions" {
        response = requests.get(url, auth=auth)
        print(response.text)
     
-    Configuration:
+    ⚙️  CONFIGURATION:
     - Mask Character: ${var.mask_character}
     - Mask Mode: ${var.mask_mode}
     - PII Entity Types: ${var.pii_entity_types}
+    - Textract OCR: Enabled (async for large scanned PDFs)
     
     ═══════════════════════════════════════════════════════════════════════════
   EOT

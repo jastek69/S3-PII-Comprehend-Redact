@@ -315,7 +315,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'statusCode': 200,
                 'headers': {
                     'Content-Type': content_type,
-                    'Content-Disposition': f'inline; filename="{key.split("/")[-1]}"'
+                    'Content-Disposition': f'inline; filename="{key.split("/")[-1]}"',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
                 },
                 'body': base64.b64encode(redacted_content).decode('utf-8'),
                 'isBase64Encoded': True
@@ -324,7 +326,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return {
                 'statusCode': 200,
                 'headers': {
-                    'Content-Type': content_type
+                    'Content-Type': content_type,
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
                 },
                 'body': redacted_content.decode('utf-8')
             }
@@ -333,12 +337,18 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {
             'statusCode': 404,
             'body': json.dumps({'error': 'Object not found'}),
-            'headers': {'Content-Type': 'application/json'}
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
         }
     except Exception as e:
         print(f"Error: {str(e)}")
         return {
             'statusCode': 500,
             'body': json.dumps({'error': str(e)}),
-            'headers': {'Content-Type': 'application/json'}
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
         }

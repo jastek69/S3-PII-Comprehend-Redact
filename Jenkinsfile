@@ -12,8 +12,7 @@ pipeline {
     environment {
         AWS_REGION = 'us-west-2'
         TF_IN_AUTOMATION = 'true'
-        // SSH key managed by Jenkins Credentials Plugin
-        SSH_KEY_PATH = credentials('pii-ec2-ssh-key')  // Create this in Jenkins
+        // EC2 removed - no SSH key needed
     }
     
     stages {

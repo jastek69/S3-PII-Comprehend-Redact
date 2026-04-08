@@ -47,6 +47,58 @@ resource "aws_api_gateway_method" "get_object" {
   }
 }
 
+# OPTIONS method for CORS preflight
+resource "aws_api_gateway_method" "options_object" {
+  rest_api_id   = aws_api_gateway_rest_api.pii_redaction_api.id
+  resource_id   = aws_api_gateway_resource.key.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# OPTIONS integration (mock)
+resource "aws_api_gateway_integration" "options" {
+  rest_api_id = aws_api_gateway_rest_api.pii_redaction_api.id
+  resource_id = aws_api_gateway_resource.key.id
+  http_method = aws_api_gateway_method.options_object.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+# OPTIONS method response
+resource "aws_api_gateway_method_response" "options_200" {
+  rest_api_id = aws_api_gateway_rest_api.pii_redaction_api.id
+  resource_id = aws_api_gateway_resource.key.id
+  http_method = aws_api_gateway_method.options_object.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+# OPTIONS integration response
+resource "aws_api_gateway_integration_response" "options_200" {
+  rest_api_id = aws_api_gateway_rest_api.pii_redaction_api.id
+  resource_id = aws_api_gateway_resource.key.id
+  http_method = aws_api_gateway_method.options_object.http_method
+  status_code = aws_api_gateway_method_response.options_200.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amz-Content-Sha256,X-Amz-Target,X-Amz-Invocation-Type,Accept,Accept-Language'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 # Lambda integration
 resource "aws_api_gateway_integration" "lambda" {
   rest_api_id = aws_api_gateway_rest_api.pii_redaction_api.id
@@ -66,7 +118,9 @@ resource "aws_api_gateway_method_response" "get_object_200" {
   status_code = "200"
 
   response_parameters = {
-    "method.response.header.Content-Type" = true
+    "method.response.header.Content-Type"                 = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Allow-Headers" = true
   }
 }
 
@@ -79,7 +133,9 @@ resource "aws_api_gateway_deployment" "prod" {
       aws_api_gateway_resource.bucket.id,
       aws_api_gateway_resource.key.id,
       aws_api_gateway_method.get_object.id,
+      aws_api_gateway_method.options_object.id,
       aws_api_gateway_integration.lambda.id,
+      aws_api_gateway_integration.options.id,
     ]))
   }
 
@@ -88,7 +144,8 @@ resource "aws_api_gateway_deployment" "prod" {
   }
 
   depends_on = [
-    aws_api_gateway_integration.lambda
+    aws_api_gateway_integration.lambda,
+    aws_api_gateway_integration.options
   ]
 }
 

@@ -45,72 +45,83 @@ terraform validate
 terraform plan -out=pii-initial.tfplan
 terraform apply -auto-approve pii-initial.tfplan
 
-# Get EC2 IP for layer download
-EC2_IP=$(terraform output -raw pii_ec2_public_ip)
-echo ""
-echo "EC2 instance launched at: $EC2_IP"
-echo "User-data is building Lambda layer automatically..."
+# Check if Lambda layer exists locally
+if [ -f "lambda/pdf-layer.zip" ]; then
+  echo ""
+  echo "✅ Lambda layer already exists locally (lambda/pdf-layer.zip)"
+  echo "   Skipping EC2 download stages (2 & 3)"
+  echo "   Note: If you need to rebuild the layer, run: ./build-layer-local.sh"
+else
+  # Get EC2 IP for layer download
+  EC2_IP=$(terraform output -raw pii_ec2_public_ip)
+  echo ""
+  echo "EC2 instance launched at: $EC2_IP"
+  echo "User-data is building Lambda layer automatically..."
 
-# Stage 2: Wait for Lambda layer to be built on EC2
-echo ""
-echo "=== Stage 2: Waiting ${LAYER_WAIT_TIME}s for Lambda layer build to complete ==="
-echo "The EC2 instance is running user-data which:"
-echo "  1. Installs Python 3 + pip"
-echo "  2. Builds pdf-layer.zip with PyPDF2 and reportlab"
-echo "  3. Validates the layer"
-echo "  4. Creates test files"
-sleep "$LAYER_WAIT_TIME"
+  # Stage 2: Wait for Lambda layer to be built on EC2
+  echo ""
+  echo "=== Stage 2: Waiting ${LAYER_WAIT_TIME}s for Lambda layer build to complete ==="
+  echo "The EC2 instance is running user-data which:"
+  echo "  1. Installs Python 3 + pip"
+  echo "  2. Builds pdf-layer.zip with PyPDF2 and reportlab"
+  echo "  3. Validates the layer"
+  echo "  4. Creates test files"
+  sleep "$LAYER_WAIT_TIME"
 
-# Stage 3: Download Lambda layer from EC2
-echo ""
-echo "=== Stage 3: Downloading Lambda layer from EC2 ==="
-mkdir -p lambda
+  # Stage 3: Download Lambda layer from EC2
+  echo ""
+  echo "=== Stage 3: Downloading Lambda layer from EC2 ==="
+  mkdir -p lambda
 
-# Verify SSH key exists and has correct permissions
-if [ ! -f "$SSH_KEY" ]; then
-  echo "❌ SSH key not found: $SSH_KEY"
-  exit 1
-fi
+  # Verify SSH key exists and has correct permissions
+  if [ ! -f "$SSH_KEY" ]; then
+    echo "❌ SSH key not found: $SSH_KEY"
+    echo "   Run: ./create_matching_key.sh to create it"
+    exit 1
+  fi
 
-echo "Using SSH key: $SSH_KEY"
-echo "Downloading from ec2-user@$EC2_IP:/home/ec2-user/pdf-layer.zip"
+  echo "Using SSH key: $SSH_KEY"
+  echo "Downloading from ec2-user@$EC2_IP:/home/ec2-user/pdf-layer.zip"
 
-# Test SSH connection first
-echo "Testing SSH connection..."
-ssh -i "$SSH_KEY" $SSH_OPTS ec2-user@$EC2_IP 'echo "✅ SSH connection successful"' || {
-  echo "❌ SSH connection failed. Check key and security group."
-  exit 1
-}
-
-# Download layer
-scp -i "$SSH_KEY" $SSH_OPTS ec2-user@$EC2_IP:/home/ec2-user/pdf-layer.zip lambda/ || {
-  echo "❌ Failed to download layer. Retrying in 30s..."
-  sleep 30
-  scp -i "$SSH_KEY" $SSH_OPTS ec2-user@$EC2_IP:/home/ec2-user/pdf-layer.zip lambda/ || {
-    echo "❌ Still failed. Manual intervention required:"
-    echo "   ssh -i $SSH_KEY ec2-user@$EC2_IP 'ls -lh /home/ec2-user/pdf-layer.zip'"
+  # Test SSH connection first
+  echo "Testing SSH connection..."
+  ssh -i "$SSH_KEY" $SSH_OPTS ec2-user@$EC2_IP 'echo "✅ SSH connection successful"' || {
+    echo "❌ SSH connection failed. Check key and security group."
+    echo "   Alternative: Run ./build-layer-local.sh to build layer locally"
     exit 1
   }
-}
 
-# Verify layer was downloaded
-if [[ -f "lambda/pdf-layer.zip" ]]; then
-  LAYER_SIZE=$(du -h lambda/pdf-layer.zip | cut -f1)
-  echo "✅ Lambda layer downloaded: $LAYER_SIZE"
-else
-  echo "❌ Layer file not found at lambda/pdf-layer.zip"
-  exit 1
+  # Download layer
+  scp -i "$SSH_KEY" $SSH_OPTS ec2-user@$EC2_IP:/home/ec2-user/pdf-layer.zip lambda/ || {
+    echo "❌ Failed to download layer. Retrying in 30s..."
+    sleep 30
+    scp -i "$SSH_KEY" $SSH_OPTS ec2-user@$EC2_IP:/home/ec2-user/pdf-layer.zip lambda/ || {
+      echo "❌ Still failed. Manual intervention required:"
+      echo "❌ Still failed. Manual intervention required:"
+      echo "   ssh -i $SSH_KEY ec2-user@$EC2_IP 'ls -lh /home/ec2-user/pdf-layer.zip'"
+      exit 1
+    }
+  }
+
+  # Verify layer was downloaded
+  if [[ -f "lambda/pdf-layer.zip" ]]; then
+    LAYER_SIZE=$(du -h lambda/pdf-layer.zip | cut -f1)
+    echo "✅ Lambda layer downloaded: $LAYER_SIZE"
+  else
+    echo "❌ Layer file not found at lambda/pdf-layer.zip"
+    exit 1
+  fi
 fi
 
-# Stage 4: Redeploy with Lambda layer
+# Stage 3: Deploy with Lambda layer
 echo ""
-echo "=== Stage 4: Redeploying Lambda with PDF support layer ==="
+echo "=== Stage 3: Deploying Lambda with PDF support layer ==="
 terraform plan -out=pii-with-layer.tfplan
 terraform apply -auto-approve pii-with-layer.tfplan
 
-# Stage 5: Upload test file and test PII redaction
+# Stage 4: Upload test file and test PII redaction
 echo ""
-echo "=== Stage 5: Testing PII redaction ==="
+echo "=== Stage 4: Testing PII redaction ==="
 BUCKET=$(terraform output -raw pii_data_bucket_name)
 
 # Create test file
@@ -148,12 +159,8 @@ terraform output
 echo ""
 echo "Quick start:"
 echo "  1. Upload file: aws s3 cp myfile.txt s3://$BUCKET/"
-echo "  2. Get redacted: $(terraform output -raw pii_ec2_scp_layer_command | cut -d':' -f1) (see outputs for full curl command)"
+echo "  2. Get redacted: curl with AWS SigV4 (see outputs for full command)"
 echo ""
-echo "EC2 Helper Scripts (available on EC2):"
-echo "  - build-lambda-layer.sh  - Rebuild Lambda layer"
-echo "  - test-comprehend.py     - Test Comprehend API"
-echo "  - validate-layer.py      - Validate layer contents"
-echo "  - create-test-files.py   - Generate PII test files"
+echo "Lambda layer built locally with: ./build-layer-local.sh"
 echo ""
 echo "========================================="

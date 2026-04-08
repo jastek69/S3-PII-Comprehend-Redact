@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PII Redaction Service</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔒 PII Redaction Service</h1>
+            <p>Upload documents to automatically redact sensitive information</p>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="card">
+                    <h2>Upload Document</h2>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📄</div>
+                        <p>Drag and drop your file here</p>
+                        <p class="upload-hint">or</p>
+                        <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">
+                            Browse Files
+                        </button>
+                        <input type="file" id="fileInput" hidden accept=".pdf,.txt,.json,.csv">
+                        <p class="file-types">Supported: PDF, TXT, JSON, CSV</p>
+                    </div>
+                    <div id="fileInfo" class="file-info hidden">
+                        <span id="fileName"></span>
+                        <button class="btn-clear" onclick="clearFile()">✕</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration Section -->
+            <section class="config-section">
+                <div class="card">
+                    <h2>Configuration</h2>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="maskMode">Redaction Mode</label>
+                            <select id="maskMode">
+                                <option value="MASK">Mask with characters (***)</option>
+                                <option value="REPLACE_WITH_PII_ENTITY_TYPE">Replace with entity type ([NAME])</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="maskChar">Mask Character</label>
+                            <input type="text" id="maskChar" value="*" maxlength="1" placeholder="*">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <section class="action-section">
+                <button class="btn-primary" id="uploadBtn" onclick="uploadFile()" disabled>
+                    <span id="uploadBtnText">Upload & Redact</span>
+                    <div id="uploadSpinner" class="spinner hidden"></div>
+                </button>
+            </section>
+
+            <!-- Status Section -->
+            <section class="status-section">
+                <div id="statusMessage" class="status-message hidden"></div>
+                <div id="progressBar" class="progress-bar hidden">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </section>
+
+            <!-- Download Section -->
+            <section class="download-section">
+                <div id="downloadCard" class="card hidden">
+                    <h2>✅ Redaction Complete</h2>
+                    <p>Your document has been successfully redacted</p>
+                    <button class="btn-primary" id="downloadBtn" onclick="downloadRedacted()">
+                        📥 Download Redacted Document
+                    </button>
+                    <div class="stats" id="redactionStats"></div>
+                </div>
+            </section>
+
+            <!-- Info Section -->
+            <section class="info-section">
+                <div class="card">
+                    <h3>Protected Information</h3>
+                    <div class="info-grid">
+                        <div class="info-item">📛 Names</div>
+                        <div class="info-item">📧 Email Addresses</div>
+                        <div class="info-item">📞 Phone Numbers</div>
+                        <div class="info-item">🆔 Social Security Numbers</div>
+                        <div class="info-item">💳 Credit Card Numbers</div>
+                        <div class="info-item">📍 Addresses</div>
+                        <div class="info-item">🏦 Bank Accounts</div>
+                        <div class="info-item">🔐 And More...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by AWS Lambda + Comprehend + Textract</p>
+        </footer>
+    </div>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1563.0.min.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -52,6 +52,19 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "pii_data_bucket_e
   }
 }
 
+# CORS configuration for web UI uploads
+resource "aws_s3_bucket_cors_configuration" "pii_data_bucket_cors" {
+  bucket = aws_s3_bucket.pii_data_bucket.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]
+    allowed_origins = ["*"]  # In production, restrict to your website domain
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
 # Ownership controls (disable ACLs, use bucket policies)
 resource "aws_s3_bucket_ownership_controls" "pii_data_bucket_ownership" {
   bucket = aws_s3_bucket.pii_data_bucket.id

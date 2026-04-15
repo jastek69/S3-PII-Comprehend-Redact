@@ -43,7 +43,8 @@ The workflow involves an S3 GET request that triggers a Lambda function via an S
 
 With [S3 Object Lambda](https://aws.amazon.com/s3/features/object-lambda) and a prebuilt AWS Lambda function powered by Amazon Comprehend, you can protect PII data retrieved from S3 before returning it to an application. Specifically, you can use the prebuilt [Lambda function](https://aws.amazon.com/lambda/) as a redacting function and attach it to an S3 Object Lambda Access Point. When an application (for example, an analytics application) sends [standard S3 GET requests](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html), these requests made through the S3 Object Lambda Access Point invoke the prebuilt redacting Lambda function to detect and redact PII data retrieved from an underlying data source through a supporting S3 access point. Then, the S3 Object Lambda Access Point returns the redacted result back to the application.
 
-![image.png](attachment:eb01f52e-a586-41a0-99de-0a880fdbbfe2:image.png)
+![image.png](/images/ol-comprehend-image-global.png)
+
 
 - [Prerequisites: Create an IAM user with permissions](https://docs.aws.amazon.com/AmazonS3/latest/userguide/tutorial-s3-object-lambda-redact-pii.html#ol-pii-prerequisites)
     

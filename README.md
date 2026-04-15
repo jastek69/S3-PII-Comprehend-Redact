@@ -1,6 +1,5 @@
-# ☁️ Detecting and redacting PII data with S3 Object Lambda and Amazon Comprehend
+# ☁️ Detecting and redacting PII data with S3 Object Lambda and Amazon Comprehend and Textract
 
-![Blackneto.jpg](/images/Blackneto.jpg "Class 7 jerMutants - Wolfpack")
 
 ![AWS](https://img.shields.io/badge/AWS-Cloud-orange?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-%E2%89%A51.9-844FBA?style=for-the-badge&logo=terraform&logoColor=white)
@@ -11,21 +10,22 @@
 ![Compliance](https://img.shields.io/badge/Compliance-HIPAA_Ready-purple?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)
 
-# **Detecting and redacting PII data with S3 Object Lambda and Amazon Comprehend**
+# ** AWS Serverless - Detecting and redacting PII data with S3 Object Lambda and Amazon Comprehend and Textract**
 
 Implementing PII (Personally Identifiable Information) redaction using S3 Object Lambda and Amazon Comprehend allows you to dynamically mask sensitive data during retrieval without altering the original files.
 
-## 🎯 Key Features
-
+## Key Features
+- **Serverless**: S3 and Lambda
 - **Multi-Format Support**: PDF, TXT, JSON, CSV files
 - **ML-Powered Detection**: 25+ PII entity types using Amazon Comprehend
+- **OCR and Large File Support**: Amazon Textract to handle scanned PDF's, async processing with no size limit
 - **Real-Time Processing**: Redaction happens during object retrieval
 - **Original Data Unchanged**: Files in S3 remain intact
 - **Flexible Configuration**: Customize mask mode, character, and PII types per access point
 - **Scalable Architecture**: Automatic scaling with Lambda and Comprehend
 - **Cost-Effective**: Pay only for what you use
 
-## 📋 Supported File Formats
+## Supported File Formats
 
 | Format | Extension | Processing |
 |--------|-----------|------------|
@@ -34,7 +34,7 @@ Implementing PII (Personally Identifiable Information) redaction using S3 Object
 | JSON | `.json` | Structure-preserving redaction |
 | CSV | `.csv` | Cell-by-cell redaction |
 
-## 🏗️ Architecture
+## Architecture
 Implementing PII (Personally Identifiable Information) redaction using S3 Object Lambda and Amazon Comprehend allows you to dynamically mask sensitive data during retrieval without altering the original files.
 
 The workflow involves an S3 GET request that triggers a Lambda function via an S3 Object Lambda Access Point. This function sends the object content to Amazon Comprehend for PII detection and returns the redacted version to the requester
